@@ -1,0 +1,61 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Uploader
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the master branch
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  schedule:
+    # * is a special character in YAML so you have to quote this string
+    - cron:  '23 7,13,19 * * *'
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+env:
+  URLDATA: "https://momo.isciii.es/public/momo/data"
+  DATAFILENAME: "dataMomo.csv"
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+
+      - name: Get current date
+        id: get_date
+        run: echo "::set-output name=date::$(date +'%Y%m%d%H%M')"
+        # https://github.community/t/how-can-i-set-an-expression-as-an-environment-variable-at-workflow-level/16516/6
+        # ${{steps.get_date.outputs.date}}
+
+      # Runs a single command using the runners shell
+      - name: Get REMOTE file
+        run: |
+          wget -q -O ${GITHUB_WORKSPACE}/${{ env.DATAFILENAME }}  ${{ env.URLDATA }}
+          echo "'GHAction ${{ steps.get_date.outputs.date }}'"
+
+      - name: Good old diff
+        id: has_changed
+        run: echo "::set-output name=exitcode::$(git diff --no-ext-diff --quiet --exit-code -- ${{env.DATAFILENAME }} ; echo $?)"
+
+      - id: git_commit
+        if: steps.has_changed.outputs.exitcode != 0
+        with:
+          commit_message: "'GHAction ${{ steps.get_date.outputs.date }}'"
+        uses: zwaldowski/git-commit-action@v1
+
+      # Runs a set of commands using the runners shell
+      - name: Run a multi-line script
+        if: steps.has_changed.outputs.exitcode != 0
+        run: |
+          git push origin
