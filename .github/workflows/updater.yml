@@ -37,7 +37,7 @@ jobs:
       # Runs a single command using the runners shell
       - name: Get REMOTE file
         run: |
-          wget -q -O ${GITHUB_WORKSPACE}/${{ env.DATAFILENAME }}  ${{ env.URLDATA }}
+          wget -O ${GITHUB_WORKSPACE}/${{ env.DATAFILENAME }}  ${{ env.URLDATA }} # -q
           echo "'GHAction ${{ steps.get_date.outputs.date }}'"
 
       - name: Good old diff
